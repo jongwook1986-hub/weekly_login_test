@@ -605,7 +605,7 @@ td.wk .wdate{background:var(--surface)}
 .adstat button b{font-size:16px;margin-right:4px;font-variant-numeric:tabular-nums}
 .adstat button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .adtbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
-.adtbl table{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+.adtbl table{border-collapse:collapse;width:100%;min-width:1000px;table-layout:auto;font-size:13.5px}
 .adtbl th,.adtbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 .adtbl th{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface-2);white-space:nowrap}
 .adtbl tr:last-child td{border-bottom:0}
@@ -636,6 +636,22 @@ td.wk .wdate{background:var(--surface)}
 .adf input,.adf select{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:8px 10px;width:100%}
 .adf .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500}
 .adf .chk input{width:auto}
+.pchks{display:flex;gap:4px 12px;flex-wrap:nowrap;width:max-content}
+.pchk{display:inline-flex;align-items:center;gap:5px;font-size:13px;white-space:nowrap;cursor:pointer}
+.pchk input{width:16px;height:16px;margin:0;accent-color:var(--accent);cursor:pointer}
+.pchk.dis{color:var(--muted);cursor:default}.pchk.dis input{cursor:default}
+.gdom{font:inherit;font-family:var(--mono,ui-monospace),monospace;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;padding:6px 8px;width:200px}
+.gtbl{min-width:900px}
+.gtbl td{padding:3px 6px}
+.gtbl th.c,.gtbl td.c{text-align:center;width:84px}
+.gtbl input:not([type=checkbox]),.gtbl select{width:100%;font:inherit;font-size:13.5px;border:1px solid transparent;background:transparent;color:var(--fg);border-radius:5px;padding:6px 8px}
+.gtbl td:nth-child(2){min-width:240px}.gtbl td:nth-child(2) input{font-family:var(--mono,ui-monospace),monospace;font-size:12.5px}
+.gtbl input:not([type=checkbox]):hover,.gtbl select:hover{border-color:var(--line)}
+.gtbl input:not([type=checkbox]):focus,.gtbl select:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.gtbl input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+.gtbl .bad{border-color:var(--danger)!important;background:var(--danger-bg)!important}
+.gtbl tr.gerr td{background:color-mix(in srgb,var(--danger-bg) 45%,transparent)}
+.gtbl .gst{font-size:12.5px;min-width:200px}
 @media (max-width:720px){.adf{grid-template-columns:1fr}.adbar input[type=search]{min-width:0;flex:1 1 100%;order:-1}.top .actions{flex-wrap:wrap}.brand{flex-wrap:wrap}}
 </style>
 
@@ -2239,7 +2255,7 @@ $("miAdmin").onclick=()=>{$("userMenu").hidden=true;openAdmin()};
 $("adminBtn").onclick=()=>openAdmin();
 
 /* ---------- 관리 화면 ---------- */
-const adm={tab:"people",people:[],ov:{},fTeam:"",fState:"",q:"",bulk:false,bulkText:"",preview:null,imp:{}};
+const adm={tab:"people",people:[],ov:{},fTeam:"",fState:"",q:"",bulk:false,grid:[],domain:"",imp:{}};
 const isAdm=()=>!!(st.me&&st.me.is_admin);
 async function openAdmin(){
   if(!st.me||!(st.me.is_admin||st.me.is_registrar))return;
@@ -2265,6 +2281,7 @@ function renderAdmin(){
   document.querySelectorAll("#adTabs [data-ad]").forEach(b=>b.setAttribute("aria-selected",b.dataset.ad===adm.tab));
   $("adTabTeams").hidden=!isAdm();
   $("adBody").innerHTML=`<div class="adwrap">${adm.tab==="teams"&&isAdm()?teamsHtml():peopleHtml()}</div>`;
+  if(adm.bulk&&adm.tab==="people")gRefresh();
 }
 function peopleHtml(){
   const all=adm.people,cnt=k=>all.filter(p=>pState(p).k===k).length;
@@ -2278,65 +2295,131 @@ function peopleHtml(){
     <select class="sel" id="adTeamF" aria-label="소속으로 보기"><option value="">모든 소속</option>${st.teams.map(t=>`<option value="${esc(t.id)}"${adm.fTeam===t.id?" selected":""}>${esc(t.name)}</option>`).join("")}</select>
     <input class="search" type="search" id="adQ" placeholder="이름·메일 검색" value="${esc(adm.q)}" aria-label="이름이나 메일로 찾기">
     <span class="spacer"></span>
-    <button class="btn" type="button" data-adact="bulk">엑셀 붙여넣기로 여러 명 등록</button>
+    <button class="btn" type="button" data-adact="bulk">여러 명 등록 (표·엑셀 붙여넣기)</button>
     <button class="btn primary" type="button" data-adact="add">+ 한 명 등록</button>
   </div>
-  ${adm.bulk?bulkHtml():""}
+  ${adm.bulk?gridCardHtml():""}
   ${firstN?`<p class="hint" style="margin:0">처음 비밀번호(0426) 그대로인 사람이 ${firstN}명 있어요. 0426은 모두가 아는 번호라, 빨리 로그인해서 바꾸도록 안내해 주세요.</p>`:""}
   <div class="adtbl"><table>
-    <thead><tr><th>이름</th><th>회사 메일</th><th>소속</th><th>역할</th><th>상태</th><th>마지막 로그인</th><th style="text-align:right">관리</th></tr></thead>
+    <thead><tr><th>이름</th><th>회사 메일</th><th>소속</th><th>권한 <span class="hint" style="font-weight:400">(체크하면 바로 저장)</span></th><th>상태</th><th>마지막 로그인</th><th style="text-align:right">관리</th></tr></thead>
     <tbody>${rows.map(p=>{const s_=pState(p),o=adm.ov[p.email]||{},lockOk=!isAdm()&&p.is_admin;
       return `<tr class="${p.active?"":"off"}">
-        <td><b>${esc(p.name)}</b>${p.is_admin?'<span class="rtag adm">관리자</span>':p.is_registrar?'<span class="rtag reg">등록 담당자</span>':""}${p.email===st.me.email?'<span class="rtag">나</span>':""}</td>
-        <td class="em">${esc(p.email)}</td><td>${esc(teamName(p.team_id)||"-")}</td><td>${p.role==="leader"?"팀장":"팀원"}</td>
+        <td><b>${esc(p.name)}</b>${p.email===st.me.email?'<span class="rtag">나</span>':""}</td>
+        <td class="em" title="${esc(p.email)}">${esc(p.email)}</td><td>${esc(teamName(p.team_id)||"-")}</td><td>${permBoxes(p,lockOk)}</td>
         <td><span class="sdot ${s_.k}">${esc(s_.t)}</span></td>
         <td class="mono" style="font-size:12px">${o.last_login?esc(fmtDT(o.last_login)):"-"}</td>
         <td><div class="acts">${s_.k==="lock"?`<button class="btn" type="button" data-unlock="${esc(p.email)}">잠금 풀기</button>`:""}${p.active&&!lockOk&&s_.k!=="never"?`<button class="btn" type="button" data-reset="${esc(p.email)}">0426 초기화</button>`:""}${lockOk?'<span class="hint" style="margin:0">관리자만 수정</span>':`<button class="btn" type="button" data-edit="${esc(p.email)}">수정</button>`}</div></td></tr>`}).join("")||`<tr><td colspan="7" class="hint">조건에 맞는 사람이 없어요.</td></tr>`}</tbody>
   </table></div>`;
 }
-function bulkHtml(){
-  const pv=adm.preview;
-  return `<div class="adcard">
-    <h3>엑셀에서 붙여넣어 여러 명 등록</h3>
-    <p class="hint">엑셀에서 <b>메일 · 이름 · 소속 · 역할</b> 4칸을 선택해 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요. 역할은 <b>팀원</b> 또는 <b>팀장</b>이고, 비우면 팀원이에요. 소속은 팀 이름(${st.teams.map(t=>esc(t.name)).join(", ")})으로 적어주세요. 이미 등록된 메일이면 이름·소속·역할만 바뀌고 비밀번호는 그대로예요.</p>
-    <textarea id="adBulk" placeholder="hong@company.com	홍길동	고객품질팀	팀원" aria-label="붙여넣을 명단">${esc(adm.bulkText)}</textarea>
-    <div class="adbar"><button class="btn" type="button" data-adact="preview">미리보기</button>${pv&&pv.okN?`<button class="btn primary" type="button" data-adact="commit">등록하기 (새로 ${pv.newN}명, 변경 ${pv.updN}명)</button>`:""}<span class="spacer"></span><button class="btn ghost" type="button" data-adact="bulkclose">닫기</button></div>
-    ${pv?`<div class="adtbl"><table style="min-width:640px"><thead><tr><th>줄</th><th>메일</th><th>이름</th><th>소속</th><th>역할</th><th>결과</th></tr></thead><tbody>${pv.rows.map(r=>`<tr><td class="mono">${r.line}</td><td class="em">${esc(r.email)}</td><td>${esc(r.name)}</td><td>${esc(r.teamName)}</td><td>${r.role==="leader"?"팀장":"팀원"}</td><td class="pv-${r.st}">${esc(r.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}
+/* ----- 권한 체크박스 (사람 목록) ----- */
+function permBoxes(p,lockOk){
+  const self=p.email===st.me.email,off=!p.active||lockOk;
+  const box=(k,label,on,dis,tip)=>`<label class="pchk${dis?" dis":""}" title="${esc(tip||"")}"><input type="checkbox" data-perm="${k}" data-em="${esc(p.email)}"${on?" checked":""}${dis?" disabled":""}>${label}</label>`;
+  return `<div class="pchks">${box("leader","팀장",p.role==="leader",off,"팀 공지를 쓸 수 있어요")}${box("reg","등록 담당자",p.is_registrar||p.is_admin,off||!isAdm()||p.is_admin,isAdm()?(p.is_admin?"관리자는 등록 권한을 함께 가져요":"사람 등록·초기화를 할 수 있어요"):"관리자만 바꿀 수 있어요")}${box("adm","관리자",p.is_admin,off||!isAdm()||self,self?"내 관리자 권한은 스스로 뺄 수 없어요":isAdm()?"모든 관리를 할 수 있어요":"관리자만 바꿀 수 있어요")}</div>`;
+}
+async function setPerm(email,k,on,el){
+  const p=adm.people.find(x=>x.email===email);if(!p)return;
+  const patch=k==="leader"?{role:on?"leader":"member"}:k==="reg"?{is_registrar:on}:{is_admin:on,...(on?{is_registrar:true}:{})};
+  const what=k==="leader"?"팀장":k==="reg"?"등록 담당자":"관리자";
+  el.disabled=true;
+  try{await api.updatePerson(email,patch);Object.assign(p,patch);toast(`${p.name} 님 ${what} 권한을 ${on?"줬어요":"뺐어요"}`);renderAdmin();refreshSoon()}
+  catch(x){el.checked=!on;el.disabled=false;toast(errText(x))}
+}
+
+/* ----- 여러 명 등록: 표에 직접 쓰거나 엑셀에서 붙여넣기 ----- */
+const G_FIELDS=["email","name","team","leader","reg","adm"];
+const gBlank=()=>({email:"",name:"",team:adm.fTeam||st.me.team_id,leader:false,reg:false,adm:false});
+function gDomain(){return (adm.domain||"").replace(/^@+/,"").trim()}
+function gEmail(v){v=String(v||"").trim().toLowerCase();if(v&&!v.includes("@")&&gDomain())v+="@"+gDomain();return v}
+function gridCardHtml(){
+  if(!adm.grid.length)adm.grid=Array.from({length:5},gBlank);
+  if(!adm.domain){try{adm.domain=localStorage.getItem("wk-mail-domain")||""}catch(_){}if(!adm.domain)adm.domain=(st.me.email.split("@")[1]||"")}
+  return `<div class="adcard" id="gCard">
+    <h3>여러 명 등록</h3>
+    <p class="hint">표에 바로 쓰거나, 엑셀에서 <b>메일 · 이름 · 소속 · 역할</b> 칸을 복사해 <b>첫 칸을 누르고 붙여넣기(Ctrl+V)</b> 하세요. 역할 칸에 '팀장'이라고 쓰면 팀장에 체크돼요. 이미 등록된 메일이면 이름·소속·권한만 바뀌고 비밀번호는 그대로예요.</p>
+    <div class="adbar"><label for="adDomain" style="font-size:13px;font-weight:600">회사 메일 뒷부분</label><span class="mono">@</span><input id="adDomain" class="gdom" value="${esc(gDomain())}" placeholder="company.com" autocomplete="off"><span class="hint" style="margin:0">메일 칸에 아이디만 쓰면 이 주소가 자동으로 붙어요.</span></div>
+    <div class="adtbl"><table class="gtbl"><thead><tr><th style="width:36px">#</th><th>회사 메일</th><th>이름</th><th>소속</th><th class="c">팀장</th>${isAdm()?'<th class="c">등록 담당자</th><th class="c">관리자</th>':""}<th>확인</th><th></th></tr></thead>
+      <tbody id="gBody">${adm.grid.map(gRowHtml).join("")}</tbody></table></div>
+    <div class="adbar"><button class="btn" type="button" data-adact="gadd">+ 5줄 더</button><button class="btn ghost" type="button" data-adact="gclear">표 비우기</button><span class="spacer"></span><span class="hint" id="gSum" style="margin:0"></span><button class="btn ghost" type="button" data-adact="bulkclose">닫기</button><button class="btn primary" type="button" data-adact="gcommit" id="gCommit" disabled>등록하기</button></div>
   </div>`;
 }
-function parseBulk(text){
-  const byEmail=Object.fromEntries(adm.people.map(p=>[p.email,p])),seen=new Set(),rows=[];
-  text.split(/\r?\n/).forEach((ln,i)=>{
-    if(!ln.trim())return;
-    const c=(ln.includes("\t")?ln.split("\t"):ln.split(",")).map(x=>x.trim());
-    if(i===0&&/메일|email/i.test(c[0]))return;
-    const email=(c[0]||"").toLowerCase(),name=c[1]||"",tv=c[2]||"",rv=c[3]||"";
-    const team=st.teams.find(t=>t.name===tv||t.id===tv);
-    const role=/팀장|leader/i.test(rv)?"leader":"member";
-    const r={line:i+1,email,name,teamName:team?team.name:tv,team_id:team?team.id:"",role,st:"err",msg:""};
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))r.msg="메일 형식이 맞지 않아요";
-    else if(seen.has(email))r.msg="같은 메일이 위에 또 있어요";
-    else if(!name)r.msg="이름이 비어 있어요";
-    else if(!team)r.msg=tv?`'${tv}' 팀이 없어요 (관리자가 먼저 팀을 만들어야 해요)`:"소속이 비어 있어요";
-    else{const ex=byEmail[email];
-      if(!ex){r.st="new";r.msg="새로 등록"}
-      else if(ex.is_admin&&!isAdm()){r.msg="관리자는 관리자만 바꿀 수 있어요"}
-      else if(ex.name===name&&ex.team_id===team.id&&ex.role===role){r.st="same";r.msg="이미 같은 정보로 등록됨"}
-      else{r.st="upd";r.msg=`정보 변경 (${[ex.name!==name?`이름 ${ex.name}→${name}`:"",ex.team_id!==team.id?`소속 ${teamName(ex.team_id)}→${team.name}`:"",ex.role!==role?"역할":""].filter(Boolean).join(", ")})`}}
-    seen.add(email);rows.push(r);
-  });
-  const newN=rows.filter(r=>r.st==="new").length,updN=rows.filter(r=>r.st==="upd").length;
-  return {rows,newN,updN,okN:newN+updN};
+function gRowHtml(r,i){
+  const ck=(f)=>`<td class="c"><input type="checkbox" data-g="${i}:${f}"${r[f]?" checked":""} aria-label="${i+1}번째 줄 ${f==="leader"?"팀장":f==="reg"?"등록 담당자":"관리자"}"></td>`;
+  return `<tr data-gi="${i}"><td class="mono hint">${i+1}</td>
+    <td><input data-g="${i}:email" value="${esc(r.email)}" placeholder="아이디 또는 메일" autocomplete="off" spellcheck="false" aria-label="${i+1}번째 줄 메일"></td>
+    <td><input data-g="${i}:name" value="${esc(r.name)}" autocomplete="off" aria-label="${i+1}번째 줄 이름"></td>
+    <td><select data-g="${i}:team" aria-label="${i+1}번째 줄 소속">${r.team?"":'<option value="" selected>소속 고르기</option>'}${st.teams.map(t=>`<option value="${esc(t.id)}"${r.team===t.id?" selected":""}>${esc(t.name)}</option>`).join("")}</select></td>
+    ${ck("leader")}${isAdm()?ck("reg")+ck("adm"):""}
+    <td class="gst" data-gs="${i}"></td><td><button class="ib" type="button" data-gdel="${i}" aria-label="${i+1}번째 줄 지우기">✕</button></td></tr>`;
 }
-async function commitBulk(){
-  const pv=adm.preview;if(!pv||!pv.okN)return;
+const gFilled=r=>!!(r.email.trim()||r.name.trim());
+function gCheck(){
+  const byEmail=Object.fromEntries(adm.people.map(p=>[p.email,p]));
+  const cnt={};adm.grid.forEach(r=>{if(gFilled(r)){const e=gEmail(r.email);if(e)cnt[e]=(cnt[e]||0)+1}});
+  return adm.grid.map(r=>{
+    if(!gFilled(r))return {st:"empty",msg:""};
+    const email=gEmail(r.email),team=st.teams.find(t=>t.id===r.team);
+    const role=r.leader?"leader":"member";
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return {st:"err",msg:r.email.trim()?"메일 형식이 맞지 않아요":"메일이 비어 있어요",f:"email"};
+    if(cnt[email]>1)return {st:"err",msg:"표 안에 같은 메일이 또 있어요",f:"email"};
+    if(!r.name.trim())return {st:"err",msg:"이름이 비어 있어요",f:"name"};
+    if(!team)return {st:"err",msg:"소속을 골라주세요",f:"team"};
+    const ex=byEmail[email];
+    const sameName=adm.people.find(p=>p.email!==email&&p.active&&p.team_id===team.id&&p.name===r.name.trim());
+    const warn=sameName?` · 같은 팀에 같은 이름(${sameName.email})이 있어요`:"";
+    if(!ex)return {st:"new",msg:"새로 등록"+warn,email};
+    if(ex.is_admin&&!isAdm())return {st:"err",msg:"이미 등록된 관리자예요 (관리자만 수정)",f:"email"};
+    const ch=[ex.name!==r.name.trim()?`이름 ${ex.name}→${r.name.trim()}`:"",ex.team_id!==team.id?`소속 ${teamName(ex.team_id)}→${team.name}`:"",ex.role!==role?(r.leader?"팀장 지정":"팀장 해제"):"",
+      isAdm()&&!!ex.is_registrar!==!!(r.reg||r.adm)?(r.reg||r.adm?"등록 담당자 지정":"등록 담당자 해제"):"",isAdm()&&!!ex.is_admin!==!!r.adm?(r.adm?"관리자 지정":"관리자 해제"):""].filter(Boolean);
+    if(!ch.length)return {st:"same",msg:"이미 같은 정보로 등록돼 있어요",email};
+    if(ex.email===st.me.email&&ex.is_admin&&!r.adm)return {st:"err",msg:"내 관리자 권한은 스스로 뺄 수 없어요",f:"adm"};
+    return {st:"upd",msg:"이미 등록됨 → 바뀌는 것: "+ch.join(", ")+warn,email};
+  });
+}
+function gRefresh(){
+  const res=gCheck();let n=0,u=0,e=0;
+  res.forEach((x,i)=>{const td=document.querySelector(`[data-gs="${i}"]`);if(!td)return;
+    td.className="gst pv-"+(x.st==="empty"?"same":x.st);td.textContent=x.msg;
+    const tr=td.closest("tr");tr.classList.toggle("gerr",x.st==="err");
+    tr.querySelectorAll("[data-g]").forEach(el=>el.classList.toggle("bad",x.st==="err"&&el.dataset.g.endsWith(":"+x.f)));
+    if(x.st==="new")n++;if(x.st==="upd")u++;if(x.st==="err")e++});
+  const b=$("gCommit");if(!b)return;
+  b.disabled=!!e||!(n+u);b.textContent=n+u?`등록하기 (새로 ${n}명${u?`, 변경 ${u}명`:""})`:"등록하기";
+  $("gSum").textContent=e?`확인이 필요한 줄이 ${e}개 있어요. 빨간 칸을 고쳐주세요.`:"";
+  $("gSum").className=e?"pv-err":"hint";
+}
+function gRender(){const b=$("gBody");if(b){b.innerHTML=adm.grid.map(gRowHtml).join("");gRefresh()}}
+const gYes=v=>/^(o|○|●|◯|y|yes|예|v|✓|✔|1|true|체크|팀장|등록|관리자)$/i.test(String(v||"").trim());
+function gPaste(i0,f0,text){
+  let lines=text.replace(/\r/g,"").split("\n");while(lines.length&&!lines[lines.length-1].trim())lines.pop();
+  if(lines.length&&/메일|email/i.test(lines[0].split("\t")[0])&&f0==="email")lines.shift();
+  const c0=G_FIELDS.indexOf(f0);
+  lines.forEach((ln,k)=>{
+    const i=i0+k;while(adm.grid.length<=i)adm.grid.push(gBlank());const r=adm.grid[i];
+    ln.split("\t").forEach((v,c)=>{const f=G_FIELDS[c0+c];if(!f)return;v=v.trim();
+      if(f==="email")r.email=gEmail(v);
+      else if(f==="name")r.name=v;
+      else if(f==="team"){const t=st.teams.find(t=>t.name===v||t.id===v||t.name.replace(/\s/g,"")===v.replace(/\s/g,""));if(t)r.team=t.id;else if(v)r.team="__bad:"+v}
+      else if(f==="leader")r.leader=/팀장|leader/i.test(v)||gYes(v)&&!/팀원/.test(v);
+      else if(isAdm())r[f]=gYes(v);});
+  });
+  gRender();
+  const bad=adm.grid.filter(r=>String(r.team).startsWith("__bad:"));
+  if(bad.length){toast(`없는 소속이 있어요: ${[...new Set(bad.map(r=>r.team.slice(6)))].join(", ")} — 그 줄의 소속을 골라주세요.`);bad.forEach(r=>r.team="");gRender()}
+  else toast(`${lines.length}줄을 붙여넣었어요`);
+}
+async function commitGrid(){
+  const res=gCheck();if(res.some(x=>x.st==="err"))return;
+  const rows=adm.grid.map((r,i)=>({r,x:res[i]})).filter(o=>o.x.st==="new"||o.x.st==="upd");if(!rows.length)return;
+  const val=({r},email)=>Object.assign({email,name:r.name.trim(),team_id:r.team,role:r.leader?"leader":"member"},isAdm()?{is_registrar:!!(r.reg||r.adm),is_admin:!!r.adm}:{});
+  $("gCommit").disabled=true;
   try{
-    const add=pv.rows.filter(r=>r.st==="new").map(r=>({email:r.email,name:r.name,team_id:r.team_id,role:r.role}));
+    const add=rows.filter(o=>o.x.st==="new").map(o=>val(o,o.x.email));
     if(add.length)await api.addPeople(add);
-    for(const r of pv.rows.filter(x=>x.st==="upd"))await api.updatePerson(r.email,{name:r.name,team_id:r.team_id,role:r.role});
-    toast(`${pv.newN}명 등록, ${pv.updN}명 변경했어요. 처음 비밀번호는 0426이에요.`);
-    adm.bulk=false;adm.bulkText="";adm.preview=null;await loadAdmin();refreshSoon();
-  }catch(e){toast(errText(e))}
+    for(const o of rows.filter(o=>o.x.st==="upd")){const {email,...patch}=val(o,o.x.email);await api.updatePerson(email,patch)}
+    toast(`${add.length}명 등록${rows.length-add.length?`, ${rows.length-add.length}명 변경`:""}했어요. 처음 비밀번호는 0426이에요.`);
+    adm.bulk=false;adm.grid=[];await loadAdmin();refreshSoon();
+  }catch(e){toast(errText(e));gRefresh()}
 }
 function personDlg(email){
   const p=email?adm.people.find(x=>x.email===email):null,o=p?adm.ov[p.email]||{}:{};
@@ -2418,22 +2501,32 @@ $("adTabs").onclick=e=>{const b=e.target.closest("[data-ad]");if(!b)return;adm.t
 $("adClose").onclick=()=>{$("adminPanel").hidden=true;closeDlg();paintUser();refresh()};
 $("adBody").addEventListener("input",e=>{
   if(e.target.id==="adQ"){adm.q=e.target.value;const pos=e.target.selectionStart;renderAdmin();const q=$("adQ");q.focus();q.setSelectionRange(pos,pos)}
-  if(e.target.id==="adBulk")adm.bulkText=e.target.value;
+  if(e.target.id==="adDomain"){adm.domain=e.target.value.replace(/^@+/,"").trim();try{localStorage.setItem("wk-mail-domain",adm.domain)}catch(_){}gRefresh()}
+  const g=e.target.dataset&&e.target.dataset.g;if(g){const [i,f]=g.split(":");const r=adm.grid[+i];if(r){r[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;if(f==="adm"&&r.adm){r.reg=true;const rb=document.querySelector(`[data-g="${i}:reg"]`);if(rb)rb.checked=true}gRefresh()}}
 });
-$("adBody").addEventListener("change",e=>{if(e.target.id==="adTeamF"){adm.fTeam=e.target.value;renderAdmin()}});
+$("adBody").addEventListener("change",e=>{if(e.target.id==="adTeamF"){adm.fTeam=e.target.value;renderAdmin();return}
+  const pm=e.target.dataset&&e.target.dataset.perm;if(pm){setPerm(e.target.dataset.em,pm,e.target.checked,e.target);return}
+  const g=e.target.dataset&&e.target.dataset.g;if(g&&g.endsWith(":email")){const [i]=g.split(":");const r=adm.grid[+i];if(r){r.email=gEmail(r.email);e.target.value=r.email;gRefresh()}}});
+$("adBody").addEventListener("paste",e=>{
+  const g=e.target.dataset&&e.target.dataset.g;if(!g)return;
+  const t=(e.clipboardData||window.clipboardData).getData("text");if(!t||!/[\t\n]/.test(t.replace(/\n$/,"")))return;
+  e.preventDefault();const [i,f]=g.split(":");gPaste(+i,f,t);
+});
 $("adBody").addEventListener("click",async e=>{
   const fs=e.target.closest("[data-fst]");if(fs){adm.fState=fs.dataset.fst;renderAdmin();return}
   const a=e.target.closest("[data-adact]");
   if(a){const k=a.dataset.adact;
     if(k==="add")personDlg(null);
-    if(k==="bulk"){adm.bulk=true;renderAdmin();setTimeout(()=>$("adBulk").focus(),30)}
-    if(k==="bulkclose"){adm.bulk=false;adm.preview=null;renderAdmin()}
-    if(k==="preview"){adm.preview=parseBulk(adm.bulkText);if(!adm.preview.rows.length)toast("붙여넣은 내용이 없어요.");renderAdmin()}
-    if(k==="commit")await commitBulk();
+    if(k==="bulk"){adm.bulk=true;renderAdmin();gRefresh();setTimeout(()=>{const f=document.querySelector('[data-g="0:email"]');if(f)f.focus()},30)}
+    if(k==="bulkclose"){adm.bulk=false;renderAdmin()}
+    if(k==="gadd"){for(let n=0;n<5;n++)adm.grid.push(gBlank());gRender()}
+    if(k==="gclear"){adm.grid=Array.from({length:5},gBlank);gRender()}
+    if(k==="gcommit")await commitGrid();
     if(k==="newteam"){const name=$("nt-name").value.trim(),id=$("nt-id").value.trim().toLowerCase();
       if(!name||!/^[a-z][a-z0-9_-]{1,29}$/.test(id)){toast("팀 이름과 영문 소문자 팀 코드를 넣어주세요.");return}
       try{await api.saveTeam({id,name,sort:(Math.max(0,...st.teams.map(t=>+t.sort||0))+10),lists:{cats:[...CATS],customers:["내부"],vendors:[]}},true);toast(`${name}을(를) 만들었어요`);await loadAdmin();paintUser()}catch(x){toast(x.code==="23505"?"이미 있는 팀 코드예요.":errText(x))}}
     return}
+  const gd=e.target.closest("[data-gdel]");if(gd){adm.grid.splice(+gd.dataset.gdel,1);if(!adm.grid.length)adm.grid.push(gBlank());gRender();return}
   const ed=e.target.closest("[data-edit]");if(ed){personDlg(ed.dataset.edit);return}
   const rs=e.target.closest("[data-reset]");if(rs){const p=adm.people.find(x=>x.email===rs.dataset.reset);
     confirmDlg("비밀번호 초기화",`<b>${esc(p.name)}</b> 님의 비밀번호를 <b>0426</b>으로 초기화할까요? 다음 로그인 때 본인이 새 6자리를 정해요.`,"초기화",false,async()=>{await api.resetPin(p.email);toast(`${p.name} 님 비밀번호를 0426으로 초기화했어요`);await loadAdmin()});return}
