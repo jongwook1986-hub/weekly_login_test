@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>주간 업무</title>
+<title>주간업무</title>
 <link rel="icon" href="favicon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -660,7 +660,7 @@ td.wk .wdate{background:var(--surface)}
 <body>
 <header class="top">
   <div class="wrap">
-    <div class="brand"><h1 id="brandTitle">주간 업무</h1><select class="sel" id="teamSwitch" hidden aria-label="볼 팀 고르기"></select></div>
+    <div class="brand"><h1 id="brandTitle">주간업무</h1><select class="sel" id="teamSwitch" hidden aria-label="볼 팀 고르기"></select></div>
     <div class="tabs" role="tablist" aria-label="화면">
       <button class="tab" role="tab" id="tab-write" aria-selected="true">작성</button>
       <button class="tab" role="tab" id="tab-review" aria-selected="false">점검</button>
@@ -889,7 +889,7 @@ td.wk .wdate{background:var(--surface)}
 
 <div class="auth" id="authScreen" hidden>
   <div class="authcard">
-    <div class="alogo"><img src="favicon.png" alt="" onerror="this.remove()"><div><b>주간 업무</b><span>회사 메일로 로그인해 주세요</span></div></div>
+    <div class="alogo"><img src="favicon.png" alt="" onerror="this.remove()"><div><b>주간업무</b><span>회사 메일로 로그인해 주세요</span></div></div>
     <form id="loginForm" novalidate>
       <div class="f"><label for="li-email">회사 메일</label><input id="li-email" type="email" autocomplete="username" inputmode="email" placeholder="name@company.com"></div>
       <div class="f"><label for="li-pin">비밀번호 (숫자)</label><input id="li-pin" class="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" placeholder="••••••"></div>
@@ -937,6 +937,9 @@ td.wk .wdate{background:var(--surface)}
 const SUPABASE_URL = "https://bybidmhwfrkpkudoevdg.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_S12i30_ghKLgViL-QtGWKA_HwJ7KJrQ";   // Publishable key 또는 anon public 키. Secret/service_role 키는 절대 넣지 마세요
 const APP_VERSION = "2.0-시험";
+// 화면 제목: {앱} = 앱 이름, {팀} = 지금 보고 있는 팀 이름 (팀 이름은 관리 → 팀에서 바꿔요)
+const APP_TITLE = "주간업무";
+const TITLE_FORMAT = "{앱} - {팀}";
 </script>
 <script>
 (function(){
@@ -2231,7 +2234,7 @@ async function doLogout(msg){
 function paintUser(){
   const m=st.me;if(!m)return;
   const tn=teamName(st.team);
-  $("brandTitle").textContent=`${tn} 주간 업무`;document.title=`${tn} 주간 업무`;
+  const ttl=TITLE_FORMAT.replace("{앱}",APP_TITLE).replace("{팀}",tn||"");$("brandTitle").textContent=ttl;document.title=ttl;
   $("userName").textContent=m.name;
   const reg=m.is_admin||m.is_registrar;
   $("adminBtn").hidden=!reg;$("miAdmin").hidden=!reg;
@@ -2259,7 +2262,9 @@ const adm={tab:"people",people:[],ov:{},fTeam:"",fState:"",q:"",bulk:false,grid:
 const isAdm=()=>!!(st.me&&st.me.is_admin);
 async function openAdmin(){
   if(!st.me||!(st.me.is_admin||st.me.is_registrar))return;
-  closeAll();$("adminPanel").hidden=false;adm.tab=adm.tab==="teams"&&!isAdm()?"people":adm.tab;
+  closeAll();$("adminPanel").hidden=false;
+  // 열 때마다 처음 모양으로: 사람 탭, 필터·검색·등록 표 비우기
+  Object.assign(adm,{tab:"people",fTeam:"",fState:"",q:"",bulk:false,grid:[],imp:{}});
   $("adBody").innerHTML='<div class="adwrap"><p class="hint">불러오는 중…</p></div>';
   await loadAdmin();
 }
