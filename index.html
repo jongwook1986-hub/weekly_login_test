@@ -653,6 +653,22 @@ td.wk .wdate{background:var(--surface)}
 .gtbl tr.gerr td{background:color-mix(in srgb,var(--danger-bg) 45%,transparent)}
 .gtbl .gst{font-size:12.5px;min-width:200px}
 @media (max-width:720px){.adf{grid-template-columns:1fr}.adbar input[type=search]{min-width:0;flex:1 1 100%;order:-1}.top .actions{flex-wrap:wrap}.brand{flex-wrap:wrap}}
+
+/* ---------- 업무 창 구역 ---------- */
+.fsec{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;flex:none}
+.fsec-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:14px}
+.fsec-h b{font-weight:700}
+.fsec-h .fnum{flex:none;width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:700;background:var(--fg);color:var(--surface)}
+.fsec-h .fsub{font-size:12px;color:var(--muted)}
+.fsec-h .wkdate{font-size:12px;font-weight:500;color:var(--accent)}
+.fsec>fieldset{padding:14px}
+.fsec-cur{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+.fsec-cur .fsec-h{background:var(--accent-soft);border-bottom-color:var(--accent-soft)}
+.fsec-cur .fnum{background:var(--accent);color:var(--accent-fg)}
+.fsec-cur>fieldset{background:var(--week)}
+.fsec-nxt{border:1px dashed var(--line-strong)}
+.fsec-nxt .fsec-h{background:var(--surface);border-bottom-style:dashed}
+.fsec-nxt .fnum{background:var(--surface);color:var(--muted);border:1.5px dashed var(--muted)}
 </style>
 
 <style>html,body{margin:0}[hidden]{display:none!important}</style>
@@ -750,9 +766,24 @@ td.wk .wdate{background:var(--surface)}
   <div class="dhead"><h2 id="dTitle">업무</h2><button class="btn ghost icon" id="dClose" aria-label="닫기">✕</button></div>
   <form class="dbody" id="form" novalidate>
     <p class="ro-note" id="roNote" hidden>다른 사람의 업무라 볼 수만 있어요. 업무는 담당자 본인만 고칠 수 있어요.</p>
-    <div class="weekbox">
+    <section class="fsec fsec-common" aria-labelledby="secCommon">
+      <div class="fsec-h"><span class="fnum">1</span><b id="secCommon">공통 정보</b><span class="fsub">어떤 일인지</span></div>
       <fieldset>
-        <legend><span id="wLegend">이번주</span><span class="wkdate mono" id="wDates"></span></legend>
+        <div class="f"><label for="f-owner">담당자 <i>*</i></label><select id="f-owner"></select></div>
+        <div class="f"><label for="f-customer">고객사 <i>*</i></label><select id="f-customer"></select></div>
+        <div class="f"><label for="f-project">대상사업 <i>*</i></label><input id="f-project" list="dl-project" autocomplete="off" placeholder="눌러서 고르거나 새로 쓰기"></div>
+        <div class="f"><label for="f-part">품목</label><input id="f-part" list="dl-part" autocomplete="off" placeholder="예: 기구물"></div>
+        <div class="f"><label for="f-po">관리번호</label><input id="f-po" class="mono" autocomplete="off" placeholder="발주번호·클레임번호 등"></div>
+        <div class="f"><label for="f-vendor">협력사</label><select id="f-vendor"></select>
+          <input id="f-vendor-new" autocomplete="off" placeholder="새 협력사 이름" hidden aria-label="새 협력사 이름"></div>
+        <div class="f"><label for="f-cat">구분 <i>*</i></label><select id="f-cat"></select>
+          <input id="f-cat-new" autocomplete="off" placeholder="새 구분 이름" hidden aria-label="새 구분 이름"></div>
+        <p class="hint">대상사업·협력사가 목록에 없으면 새로 쓰세요. 저장할 때 내 목록에도 추가돼요.</p>
+      </fieldset>
+    </section>
+    <section class="fsec fsec-cur" aria-labelledby="wLegend">
+      <div class="fsec-h"><span class="fnum">2</span><b id="wLegend">이번주 할일</b><span class="wkdate mono" id="wDates"></span></div>
+      <fieldset>
         <div class="f full"><label for="w-task">할일</label><input id="w-task" autocomplete="off" placeholder="예: 고객 수검 입회"></div>
         <div class="f"><label for="w-due">언제까지</label><input id="w-due" type="date"></div>
         <div class="f"><span class="lab" id="w-status-lab">상태</span>
@@ -765,30 +796,17 @@ td.wk .wdate{background:var(--surface)}
         <div class="f full"><label for="w-memo">메모</label><textarea id="w-memo" placeholder="고객 지적사항, 협력사 회신, 일정 변경 등"></textarea></div>
         <p class="hint" id="carryHint" hidden></p>
       </fieldset>
-    </div>
-    <div class="weekbox next">
+    </section>
+    <section class="fsec fsec-nxt" aria-labelledby="nLegend">
+      <div class="fsec-h"><span class="fnum">3</span><b id="nLegend">다음주 계획</b><span class="wkdate mono" id="nDates"></span><button type="button" class="btn carrybtn" id="carryNext">↓ 이번주 내용 가져오기</button></div>
       <fieldset>
-        <legend><span id="nLegend">다음주 계획</span><span class="wkdate mono" id="nDates"></span><button type="button" class="btn carrybtn" id="carryNext">↓ 이번주 내용 가져오기</button></legend>
         <p class="hint" id="carryNextMsg" hidden></p>
         <div class="f full"><label for="n-task">할일</label><input id="n-task" autocomplete="off" placeholder="예: 성적서 제출"></div>
         <div class="f"><label for="n-due">언제까지</label><input id="n-due" type="date"></div>
         <div class="f full"><label for="n-memo">메모</label><textarea id="n-memo" placeholder="다음주에 챙길 것"></textarea></div>
         <p class="hint">미리 정해둔 다음주 할일이에요. 다음주가 되면 이번주 칸으로 자동으로 올라갑니다. 비워두면 이번주 일이 끝나지 않았을 때 그대로 이월돼요.</p>
       </fieldset>
-    </div>
-    <fieldset>
-      <legend>공통 정보</legend>
-      <div class="f"><label for="f-owner">담당자 <i>*</i></label><select id="f-owner"></select></div>
-      <div class="f"><label for="f-customer">고객사 <i>*</i></label><select id="f-customer"></select></div>
-      <div class="f"><label for="f-project">대상사업 <i>*</i></label><input id="f-project" list="dl-project" autocomplete="off" placeholder="예: PKMR"></div>
-      <div class="f"><label for="f-part">품목</label><input id="f-part" list="dl-part" autocomplete="off" placeholder="예: 기구물"></div>
-      <div class="f"><label for="f-po">관리번호</label><input id="f-po" class="mono" autocomplete="off" placeholder="발주번호·클레임번호 등"></div>
-      <div class="f"><label for="f-vendor">협력사</label><select id="f-vendor"></select>
-        <input id="f-vendor-new" autocomplete="off" placeholder="새 협력사 이름" hidden aria-label="새 협력사 이름"></div>
-      <div class="f"><label for="f-cat">구분 <i>*</i></label><select id="f-cat"></select>
-        <input id="f-cat-new" autocomplete="off" placeholder="새 구분 이름" hidden aria-label="새 구분 이름"></div>
-      <p class="hint">출장검사·불량처럼 협력사가 관련된 일은 협력사를 골라주세요. 목록에 없으면 '+ 새 협력사'를 고르면 저장할 때 목록에도 추가돼요.</p>
-    </fieldset>
+    </section>
     <div id="historyBox" hidden>
       <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">지난 기록</div>
       <div class="history" id="history"></div>
@@ -820,6 +838,7 @@ td.wk .wdate{background:var(--surface)}
   <div class="dbody">
     <div class="tabs" role="tablist" aria-label="목록 종류" id="sTabs" style="align-self:flex-start">
       <button class="tab" role="tab" data-list="members" aria-selected="true">팀원 색</button>
+      <button class="tab" role="tab" data-list="projects" aria-selected="false">대상사업</button>
       <button class="tab" role="tab" data-list="customers" aria-selected="false">고객사</button>
       <button class="tab" role="tab" data-list="vendors" aria-selected="false">협력사</button>
       <button class="tab" role="tab" data-list="cats" aria-selected="false">구분</button>
@@ -960,7 +979,7 @@ function personColors(){
 }
 const pcol=(map,name)=>map[name]!=null?map[name]:PALETTE_N-1;
 const catsList=()=>st.lists.cats&&st.lists.cats.length?st.lists.cats:CATS;
-const LIST_INFO={members:{label:"팀원 색",field:"owner",hint:"팀원 명단은 등록 담당자가 관리해요. 여기서는 내 색만 고를 수 있고, 고른 색은 모두에게 똑같이 보여요.",ph:""},
+const LIST_INFO={projects:{label:"대상사업",field:"project",hint:"",ph:"새 대상사업"},members:{label:"팀원 색",field:"owner",hint:"팀원 명단은 등록 담당자가 관리해요. 여기서는 내 색만 고를 수 있고, 고른 색은 모두에게 똑같이 보여요.",ph:""},
   customers:{label:"고객사",field:"customer",hint:"'내부'는 고객사가 없는 팀 내부 업무용이라 지울 수 없어요.",ph:"새 고객사 이름"},
   vendors:{label:"협력사",field:"vendor",hint:"업무를 쓸 때 협력사 칸에서 고르는 목록이에요. 가나다순으로 보여요.",ph:"새 협력사 이름"},
   cats:{label:"구분",field:"category",hint:"업무를 쓸 때 고르는 구분이에요. ↑↓로 고르는 순서를 바꿀 수 있어요.",ph:"새 구분 이름"}};
@@ -1413,7 +1432,8 @@ async function quickStatus_(id,status){
 /* ---------- drawer ---------- */
 function setDatalists(){
   const uniq=f=>[...new Set(st.items.map(i=>i[f]).filter(v=>v&&v!=="확인 필요"))].sort((a,b)=>a.localeCompare(b,"ko"));
-  $("dl-project").innerHTML=uniq("project").map(v=>`<option value="${esc(v)}">`).join("");
+  const mine=st.lists.projects||[];
+  $("dl-project").innerHTML=[...mine,...uniq("project").filter(v=>!mine.includes(v))].map(v=>`<option value="${esc(v)}">`).join("");
   $("dl-part").innerHTML=uniq("part").map(v=>`<option value="${esc(v)}">`).join("");
   $("dl-vendor").innerHTML=uniq("vendor").map(v=>`<option value="${esc(v)}">`).join("");
 }
@@ -1448,7 +1468,7 @@ function openDrawer(id,presetOwner,focusNext){
   const ks=Object.keys(w).filter(k=>k<W).sort();const last=ks.length?w[ks[ks.length-1]]:null;
   const carried=!w[W]&&last&&last.status!=="완료";
   const cur=w[W]||(carried?{task:last.task,due:last.due,status:last.status,memo:""}:null);
-  $("wLegend").textContent=W===CUR?"이번주":"선택한 주";$("wDates").textContent=rangeOf(W);
+  $("wLegend").textContent=W===CUR?"이번주 할일":"선택한 주 할일";$("wDates").textContent=rangeOf(W);
   $("w-task").value=cur?.task||"";$("w-due").value=cur?.due||"";$("w-memo").value=cur?.memo||"";
   const s=cur?.status||"진행";document.querySelectorAll('input[name="w-status"]').forEach(r=>r.checked=r.value===s);
   if(carried){$("carryHint").hidden=false;$("carryHint").innerHTML=`<span class="carry">이월</span>지난주에 끝나지 않아 그대로 넘어온 내용이에요. 이번주 기준으로 고치고 저장하면 이번주 기록이 됩니다.`}
@@ -1560,9 +1580,10 @@ async function save(){
   try{
     const ref=isNew?st.db.collection("items").doc():st.db.doc("items/"+existing._id);
     await ref.set(body);
-    const addV=v.vendor&&!(st.lists.vendors||[]).includes(v.vendor),addC=v.category&&!catsList().includes(v.category);
-    if(addV||addC){
+    const addV=v.vendor&&!(st.lists.vendors||[]).includes(v.vendor),addC=v.category&&!catsList().includes(v.category),addP=v.project&&!(st.lists.projects||[]).includes(v.project);
+    if(addV||addC||addP){
       const nl=Object.assign({},st.lists,{cats:[...catsList()]});
+      if(addP)nl.projects=[...(st.lists.projects||[]),v.project];
       if(addV)nl.vendors=[...(st.lists.vendors||[]),v.vendor];
       if(addC)nl.cats=[...nl.cats,v.category];
       try{await st.db.doc("config/lists").set(nl)}catch(_){}
@@ -1641,7 +1662,7 @@ function renderSettings(){
       <span class="num mono">${pos+1}</span>
       <input value="${esc(x.val)}" data-edit="${x.i}" aria-label="${esc(info.label)} 이름" ${lock?"readonly":""}>
       ${!x.orig?`<span class="chg">새로 추가</span>`:n?`<span class="use">업무 ${n}건</span>`:""}
-      ${sTab==="customers"||sTab==="cats"?`<button class="ib" type="button" data-up="${x.i}" aria-label="위로" ${pos===0?"disabled":""}>↑</button><button class="ib" type="button" data-down="${x.i}" aria-label="아래로" ${pos===arr.length-1?"disabled":""}>↓</button>`:""}
+      ${sTab==="customers"||sTab==="cats"||sTab==="projects"?`<button class="ib" type="button" data-up="${x.i}" aria-label="위로" ${pos===0?"disabled":""}>↑</button><button class="ib" type="button" data-down="${x.i}" aria-label="아래로" ${pos===arr.length-1?"disabled":""}>↓</button>`:""}
       <button class="ib del" type="button" data-del="${x.i}" aria-label="삭제" ${lock?"disabled":""}>✕</button></div>`}).join("")
     :`<div class="none">아직 ${esc(info.label)}가 없어요. 위에서 추가하세요.</div>`;
 }
@@ -1665,7 +1686,7 @@ function addListItem(){
 }
 async function saveSettings(){
   const lists={};
-  for(const k of ["customers","vendors","cats"]){
+  for(const k of ["projects","customers","vendors","cats"]){
     const vals=sEdit[k].map(x=>x.val.trim()).filter(Boolean);
     const dup=vals.find((v,i)=>vals.indexOf(v)!==i);
     if(dup){sTab=k;renderSettings();toast(`${LIST_INFO[k].label} '${dup}'이(가) 두 번 있어요.`);return}
@@ -1684,7 +1705,7 @@ async function saveSettings(){
 }
 $("sReset").onclick=()=>{
   const team=(st.teams.find(t=>t.id===st.team)||{}).lists||{};
-  for(const k of ["customers","vendors","cats"]){const src=Array.isArray(team[k])&&team[k].length?team[k]:(k==="cats"?CATS:DEFAULT_LISTS[k]||[]);sEdit[k]=src.map(x=>({orig:x,val:x}))}
+  for(const k of ["projects","customers","vendors","cats"]){const src=Array.isArray(team[k])&&team[k].length?team[k]:(k==="cats"?CATS:k==="projects"?usedProjects():DEFAULT_LISTS[k]||[]);sEdit[k]=src.map(x=>({orig:x,val:x}))}
   renderSettings();toast("팀 기본 목록을 불러왔어요. 저장을 눌러야 적용돼요.");
 };
 async function clearSamples(){
@@ -1989,13 +2010,15 @@ const dbShim={
   doc(path){const [c,id]=path.split("/");return {
     async set(data){
       if(c==="items"){const isNew=!st.items.some(i=>i._id===id);await api.setItem(id,stripPriv(data),isNew)}
-      else{const l={customers:data.customers||st.lists.customers,vendors:data.vendors||st.lists.vendors,cats:data.cats||st.lists.cats};await api.setPrefs(null,l);if(st.me)st.me.my_lists=l}
+      else{const l={projects:data.projects||st.lists.projects||[],customers:data.customers||st.lists.customers,vendors:data.vendors||st.lists.vendors,cats:data.cats||st.lists.cats};await api.setPrefs(null,l);if(st.me)st.me.my_lists=l}
       refreshSoon()},
     async delete(){await api.delItem(id);refreshSoon()},
     async update(patch){const it=st.items.find(i=>i._id===id);if(!it)return;await api.setItem(id,stripPriv(Object.assign({},it,patch)),false);refreshSoon()}
   }},
   collection(c){return {doc(){return dbShim.doc(c+"/"+newId())}}}
 };
+// 팀 업무에 쓰인 대상사업 (내 목록이 아직 없을 때 처음 목록)
+function usedProjects(){const m=new Map();st.items.forEach(i=>{if(i.project)m.set(i.project,(m.get(i.project)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ko")).map(x=>x[0])}
 const personOrder=(a,b)=>(a.role==="leader"?0:1)-(b.role==="leader"?0:1)||a.name.localeCompare(b.name,"ko");
 function applyLoad(d){
   st.people=d.people;
@@ -2004,8 +2027,8 @@ function applyLoad(d){
   st.items=d.rows.map(r=>{const o=Object.assign({},r.data,{_id:r.id,_email:r.owner_email});const p=by[r.owner_email];if(p)o.owner=p.name;return o});
   const team=st.teams.find(t=>t.id===st.team)||{lists:{}};
   const base=team.lists||{},mine=st.team===st.me.team_id&&st.me.my_lists?st.me.my_lists:null;
-  const pick=k=>mine&&Array.isArray(mine[k])?mine[k]:Array.isArray(base[k])&&base[k].length?base[k]:k==="cats"?CATS:(DEFAULT_LISTS[k]||[]);
-  st.lists={members:act.map(p=>p.name),customers:[...pick("customers")],vendors:[...pick("vendors")],cats:[...pick("cats")],
+  const pick=k=>mine&&Array.isArray(mine[k])?mine[k]:Array.isArray(base[k])&&base[k].length?base[k]:k==="cats"?CATS:k==="projects"?usedProjects():(DEFAULT_LISTS[k]||[]);
+  st.lists={members:act.map(p=>p.name),projects:[...pick("projects")],customers:[...pick("customers")],vendors:[...pick("vendors")],cats:[...pick("cats")],
     colors:Object.fromEntries(d.people.filter(p=>Number.isInteger(p.color)).map(p=>[p.name,p.color]))};
   if(!st.lists.customers.includes("내부"))st.lists.customers.push("내부");
   if(!st.lists.cats.length)st.lists.cats=[...CATS];
@@ -2487,7 +2510,7 @@ function teamsHtml(){
   <div class="tgrid">${st.teams.map(t=>{const L=t.lists||{},imp=adm.imp[t.id];return `<div class="adcard tlist" data-team="${esc(t.id)}">
     <h3>${esc(t.name)} <span class="hint mono" style="font-weight:400">${esc(t.id)} · ${cnt(t.id)}명</span></h3>
     <div class="adf"><div class="f"><label>팀 이름</label><input data-tf="name" value="${esc(t.name)}"></div><div class="f"><label>표시 순서</label><input data-tf="sort" type="number" value="${esc(t.sort)}"></div></div>
-    <div class="cols">${[["customers","고객사"],["vendors","협력사"],["cats","구분"]].map(([k,l])=>`<div><label>${l} (한 줄에 하나)</label><textarea data-tl="${k}">${esc((L[k]||[]).join("\n"))}</textarea></div>`).join("")}</div>
+    <div class="cols">${[["projects","대상사업"],["customers","고객사"],["vendors","협력사"],["cats","구분"]].map(([k,l])=>`<div><label>${l} (한 줄에 하나)</label><textarea data-tl="${k}">${esc((L[k]||[]).join("\n"))}</textarea></div>`).join("")}</div>
     <div class="adbar"><span class="spacer"></span><button class="btn primary" type="button" data-tsave="${esc(t.id)}">이 팀 저장</button></div>
     <details><summary style="cursor:pointer;font-weight:600;font-size:13.5px">지금 쓰는 화면의 업무 가져오기</summary>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
@@ -2539,7 +2562,7 @@ $("adBody").addEventListener("click",async e=>{
   const ts=e.target.closest("[data-tsave]");if(ts){const c=ts.closest("[data-team]"),id=c.dataset.team,t=st.teams.find(x=>x.id===id);
     const lines=k=>[...new Set(c.querySelector(`[data-tl="${k}"]`).value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean))];
     const name=c.querySelector('[data-tf="name"]').value.trim();if(!name){toast("팀 이름을 넣어주세요.");return}
-    try{await api.saveTeam({id,name,sort:+c.querySelector('[data-tf="sort"]').value||t.sort,lists:{customers:lines("customers"),vendors:lines("vendors"),cats:lines("cats")}},false);toast(`${name} 정보를 저장했어요`);await loadAdmin();paintUser()}catch(x){toast(errText(x))}
+    try{await api.saveTeam({id,name,sort:+c.querySelector('[data-tf="sort"]').value||t.sort,lists:{projects:lines("projects"),customers:lines("customers"),vendors:lines("vendors"),cats:lines("cats")}},false);toast(`${name} 정보를 저장했어요`);await loadAdmin();paintUser()}catch(x){toast(errText(x))}
     return}
   const ig=e.target.closest("[data-impgo]");if(ig){const id=ig.dataset.t,c=ig.closest("[data-team]");const src=c.querySelector('[data-imp="src"]').value.trim(),reset=c.querySelector('[data-imp="reset"]').checked,dry=ig.dataset.impgo==="dry";
     const run=async()=>{const r=await api.importLegacy(src,id,dry,reset);
